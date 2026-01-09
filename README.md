@@ -1,6 +1,8 @@
 # Nginy
 
-![Nginy Logo](./banner.png)
+<p align="center">
+  <img src="./banner.png" alt="Nginy Logo" />
+</p>
 
 A minimalist, educational web server written in ~100 lines of C.
 Nginy is for people who love the simplicity of static websites.
