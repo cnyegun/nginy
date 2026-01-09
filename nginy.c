@@ -6,40 +6,40 @@
 #include <stdio.h>
 #include <string.h>
 #define port 8080
-#define ip_addr inaddr_loopback
-// inaddr_loopback is localhost
+#define IP_ADDR INADDR_LOOPBACK
+// INADDR_LOOPBACK is localhost
 
 int main() {
-	int fd = socket(af_inet, sock_stream, 0);
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
 
-	printf("begin to initialize... ");
-	// so_reuseport <- can run many nginy instance on same port
+	printf("Begin to initialize... ");
+	// SO_REUSEPORT <- can run many nginy instance on same port
 	int opt = 1;
-	if (setsockopt(fd, sol_socket, so_reuseport, &opt, sizeof(opt)) < 0) {
-		perror("socket option failure");
-		exit(exit_failure);
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+		perror("Socket option failure");
+		exit(EXIT_FAILURE);
 	}
 
 	struct sockaddr_in addr;
-	addr.sin_family = af_inet; 		// ipv4
-	addr.sin_port = htons(port); 
-	addr.sin_addr.s_addr = htonl(ip_addr);
+	addr.sin_family = AF_INET; 		// IPv4
+	addr.sin_port = htons(PORT); 
+	addr.sin_addr.s_addr = htonl(IP_ADDR);
 
 	if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind failed");
-		exit(exit_failure);
+		perror("Bind failed");
+		exit(EXIT_FAILURE);
 	}
 
 	// max 511 clients waiting for connection
 	if (listen(fd, 511) < 0) {
-		perror("listen failed");
-		exit(exit_failure);
+		perror("Listen failed");
+		exit(EXIT_FAILURE);
 	}
 
-	printf("successful.\nlistening to %s:%d.\n", inet_ntoa(addr.sin_addr), port);
+	printf("Successful.\nListening to %s:%d.\n", inet_ntoa(addr.sin_addr), PORT);
 
 	while (1) {
-		int client_fd = accept(fd, null, null);
+		int client_fd = accept(fd, NULL, NULL);
 		
 		char buffer[1024] = {0};
 		read(client_fd, buffer, 1024 - 1);
@@ -54,17 +54,17 @@ int main() {
 		}
 
 		file *file = fopen(path + 1, "r");
-		if (file == null) {
-			char *error_response = "http/1.1 404 not found\n\nfile not found!";
+		if (file == NULL) {
+			char *error_response = "HTTP/1.1 404 Not Found\n\nFile Not Found!";
 			write(client_fd, error_response, strlen(error_response));
 		} else {
 			char file_buffer[1024] = {0};
 			int bytes_read = fread(file_buffer, 1, 1024, file);
 			char header[1024] = {0};
 			sprintf(header,
-				"http/1.1 200 ok\n"
-				"content-type: text/html\n"
-				"content-length: %d\n"
+				"HTTP/1.1 200 OK\n"
+				"Content-Type: text/html\n"
+				"Content-Length: %d\n"
 				"\n",
 				bytes_read
 			);
