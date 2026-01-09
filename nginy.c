@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
-#define port 8080
+#define PORT 8080
 #define IP_ADDR INADDR_LOOPBACK
 // INADDR_LOOPBACK is localhost
 
@@ -53,7 +53,7 @@ int main() {
 			strcpy(path, "/index.html");
 		}
 
-		file *file = fopen(path + 1, "r");
+		FILE *file = fopen(path + 1, "r");
 		if (file == NULL) {
 			char *error_response = "HTTP/1.1 404 Not Found\n\nFile Not Found!";
 			write(client_fd, error_response, strlen(error_response));
