@@ -1,6 +1,6 @@
 # What is a webserver?
 
-If we strip down all the details, a webserver is a program that listens to messages from others program, and then it answers them accordingly.
+If we strip down all the details, a webserver is a program that listens to messages from others program, and then it answer them accordingly.
 
 # What a webserver should be doing
 
