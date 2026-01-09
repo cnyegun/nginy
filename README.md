@@ -1,7 +1,7 @@
 # Nginy
 
 <p align="center">
-  <img src="./banner.png" alt="Nginy Logo" />
+  <img src="./banner_v1.png" alt="Nginy Logo" />
 </p>
 
 A minimalist, educational web server written in ~100 lines of C.
