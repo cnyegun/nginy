@@ -1,14 +1,18 @@
+# Nginy
+
+![Nginy Logo](./banner.png)
+
+A minimalist, educational web server written in ~100 lines of C.
+Nginy is for people who love the simplicity of static websites.
+
 # What is a webserver?
 
-If we strip down all the details, a webserver is a program that listens to messages from others program, and then answers them accordingly.
+If we strip down all the details, a webserver is just a program that listens to messages from other program, and then answers them accordingly.
 
-# What a webserver should be doing
+** That is exactly what Nginy does: **
+1. Listen for a connection on PORT (default 8080)
+2. Parse and sanitize the request. 
+3. Stream the file back to the client.
+4. Go back to Step 1.
 
-1. Listen for messages on.
-2. If an event occur, resolve it.
-3. Send the result message back to the client.
-4. Back to 1.
 
-# Goal of Nginy
-
-Nginy is for people who loves the simplicity of static websites.

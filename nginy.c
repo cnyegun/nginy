@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #define PORT 8080
 #define IP_ADDR INADDR_LOOPBACK
 // INADDR_LOOPBACK is localhost
@@ -24,6 +25,7 @@ const char *get_file_type(const char *path) {
 }
 
 int main() {
+	signal(SIGPIPE, SIG_IGN);
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 
 	printf("Begin to initialize... ");
@@ -55,6 +57,8 @@ int main() {
 	while (1) {
 		int client_fd = accept(fd, NULL, NULL);
 		
+		printf("Client connected! Processing...\n");
+
 		char buffer[1024] = {0};
 		read(client_fd, buffer, 1024 - 1);
 
