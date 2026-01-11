@@ -4,7 +4,7 @@
   <img src="./banner_v1.png" alt="Nginy Logo" />
 </p>
 
-A minimalist, educational web server written in ~100 lines of C.
+**A minimalist, high performance and non-blocking web server written in ~400 lines of C.**
 Nginy is for people who love the simplicity of static websites.
 
 # What is a webserver?
@@ -17,4 +17,15 @@ If we strip down all the details, a webserver is just a program that listens to 
 3. Stream the file back to the client.
 4. Go back to Step 1.
 
+Then when we tried to send request from 1000 clients, the 1000th client had to wait a really long time for the server to serve them, that is not how modern websites behave. We need to have concurrency. Luckily, the linux kernel have `epoll` and `sendfile`, we implemented that.
 
+# Install
+
+```bash
+git clone https://github.com/cnyegun/nginy
+cd nginy
+make
+./nginy
+```
+
+You will need to create a directory named public/ inside nginy/, that's where you put your website files in.
