@@ -50,8 +50,8 @@ int setup_server_socket();
 void handle_new_connection(int epoll_fd, int server_fd);
 void handle_client_event(int epoll_fd, client_t *c);
 void handle_state_read(int epoll_fd, client_t *c);
-void handle_state_send_header(client_t *c);
-void handle_state_send_file(client_t *c);
+void handle_state_send_header(int epoll_fd, client_t *c);
+void handle_state_send_file(int epoll_fd, client_t *c);
 
 int main() {
     signal(SIGPIPE, SIG_IGN);
@@ -133,7 +133,11 @@ int set_nonblocking(int fd) {
 }
 
 void send_404(client_t *c) {
-    const char *response = "HTTP/1.1 404 Not Found\r\nContent-Length: 13\r\nConnection: close\r\n\r\n404 Not Found";
+    const char *response = 
+        "HTTP/1.1 404 Not Found\r\n"
+        "Content-Length: 13\r\n"
+        "Connection: close\r\n\r\n"
+        "404 Not Found";
     write(c->client_fd, response, strlen(response));
     free_client(c);
 }
@@ -162,6 +166,9 @@ int prepare_file_response(client_t *c) {
     if (strcmp(path, "/") == 0) 
         strcpy(path, "/index.html");
     
+    // Debug log
+    printf("%s %s\n", method, path);
+
     char file_path[1024];
     struct stat file_stat;
     snprintf(file_path, sizeof(file_path), "%s%s", PUBLIC_DIR, path);
@@ -181,7 +188,7 @@ int prepare_file_response(client_t *c) {
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: %s\r\n"
         "Content-Length: %ld\r\n"
-        "Connection: close\r\n\r\n",
+        "Connection: keep-alive\r\n\r\n",
         mime_type,
         c->content_length
     );
@@ -190,6 +197,24 @@ int prepare_file_response(client_t *c) {
     c->header_sent = 0;
     c->state = STATE_SEND_HEADER;
     return 0;
+}
+
+void cleanup_connection(client_t *c) {
+    if (c == NULL) return;
+    if (c->file_fd > 0) {
+        close(c->file_fd);
+        c->file_fd = -1;
+    }
+
+    c->file_offset = 0;
+    c->request_offset = 0;
+    c->content_length = 0;
+    c->header_len = 0;
+    c->header_sent = 0;
+
+    c->state = STATE_READ_REQUEST;
+    c->request[0] = '\0';
+    c->response_buffer[0] = '\0'; 
 }
 
 // Returns server_fd if sucess, crash if failed
@@ -322,11 +347,11 @@ void handle_state_read(int epoll_fd, client_t *c) {
             free_client(c);
             return;
         }
-        handle_state_send_header(c);
+        handle_state_send_header(epoll_fd, c);
     }
 }
 
-void handle_state_send_header(client_t *c) {
+void handle_state_send_header(int epoll_fd, client_t *c) {
     ssize_t bytes_sent = write(
         c->client_fd,
         c->response_buffer + c->header_sent, 
@@ -345,11 +370,11 @@ void handle_state_send_header(client_t *c) {
 
     if (c->header_sent == c->header_len) {
         c->state = STATE_SEND_FILE;
-        handle_state_send_file(c);
+        handle_state_send_file(epoll_fd, c);
     }
 }
 
-void handle_state_send_file(client_t *c) {
+void handle_state_send_file(int epoll_fd, client_t *c) {
     ssize_t bytes_sent = sendfile(
         c->client_fd, 
         c->file_fd, 
@@ -366,7 +391,19 @@ void handle_state_send_file(client_t *c) {
     }
 
     if ((size_t)c->file_offset == c->content_length) {
-        free_client(c);
+        // Completed the request
+        // Now put it back to sleep in epoll, wait for new request
+        // Clean the client but keep the client_fd 
+        cleanup_connection(c);
+        // Need to create an epoll_event 
+        struct epoll_event ev;
+        ev.events = EPOLLIN | EPOLLET;
+        ev.data.ptr = c;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, c->client_fd, &ev) < 0) {
+            perror("Epoll add back connection failed");
+            free_client(c);
+        }
     }
 }
 
@@ -379,10 +416,10 @@ void handle_client_event(int epoll_fd, client_t *c) {
             handle_state_read(epoll_fd, c);
             return;
         case STATE_SEND_HEADER:
-            handle_state_send_header(c);
+            handle_state_send_header(epoll_fd, c);
             return;
         case STATE_SEND_FILE:
-            handle_state_send_file(c);
+            handle_state_send_file(epoll_fd, c);
             return;
     }
 }
